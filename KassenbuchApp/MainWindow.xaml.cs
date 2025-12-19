@@ -339,15 +339,21 @@ namespace KassenbuchApp
             using var con = new SQLiteConnection(AppConfig.ConnectionString);
             con.Open();
 
-            using var cmd = new SQLiteCommand("SELECT Dateipfad FROM Belege WHERE KassenbuchId = @Id", con);
+            using var cmd = new SQLiteCommand("SELECT RelPfad FROM Belege WHERE KassenbuchId = @Id", con);
             cmd.Parameters.AddWithValue("@Id", kassenbuchId);
 
             using var rd = cmd.ExecuteReader();
             while (rd.Read())
             {
-                var p = rd["Dateipfad"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(p))
-                    list.Add(p);
+                var relPfad = rd["RelPfad"]?.ToString();
+                if (string.IsNullOrWhiteSpace(relPfad))
+                    continue;
+
+                var absolutePfad = Path.Combine(
+                    BelegStorage.BaseFolder,
+                    relPfad.Replace('/', Path.DirectorySeparatorChar));
+
+                list.Add(absolutePfad);
             }
 
             return list;
