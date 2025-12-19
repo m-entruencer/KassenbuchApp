@@ -1,0 +1,71 @@
+﻿<Window x:Class="KassenbuchApp.BelegeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Belege"
+        Height="440" Width="720"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="12">
+        <!-- Korrekte WPF-Notation für Zeilen -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Kopfzeile: links Info, rechts Buttons -->
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Info links -->
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Belege für Eintrag #" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding KassenbuchId}" FontWeight="Bold" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                <TextBlock Text="  (" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Seite}" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text=")" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Buttons rechts -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="Hinzufügen…" Margin="12,0,0,0" Width="110" Click="Add_Click"/>
+                <Button Content="Öffnen" Margin="6,0,0,0" Width="90" Click="Open_Click"/>
+                <Button Content="Im Explorer" Margin="6,0,0,0" Width="110" Click="ShowInExplorer_Click"/>
+                <Button Content="Entfernen" Margin="6,0,0,0" Width="110" Click="Delete_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Hauptliste -->
+        <ListView x:Name="ListBelege"
+              Grid.Row="1"
+              MouseDoubleClick="Open_Click">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Datei" Width="320" DisplayMemberBinding="{Binding Originalname}" />
+                    <GridViewColumn Header="Rel. Pfad" Width="260" DisplayMemberBinding="{Binding RelPfad}" />
+                    <GridViewColumn Header="Hinzugefügt" Width="120" DisplayMemberBinding="{Binding HinzugefuegtAm}" />
+                </GridView>
+            </ListView.View>
+
+            <!-- Kontextmenü -->
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Öffnen" Click="Open_Click"/>
+                    <MenuItem Header="Im Explorer" Click="ShowInExplorer_Click"/>
+                    <MenuItem Header="Entfernen" Click="Delete_Click"/>
+                </ContextMenu>
+            </ListView.ContextMenu>
+        </ListView>
+
+        <!-- Fußzeile: Schließen zentriert -->
+        <StackPanel Grid.Row="2"
+                Orientation="Horizontal"
+                HorizontalAlignment="Center"
+                Margin="0,10,0,0">
+            <Button Content="Schließen" Width="120" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

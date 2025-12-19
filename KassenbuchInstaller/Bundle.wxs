@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:bal="http://schemas.microsoft.com/wix/BalExtension">
+
+	<Bundle Name="Kassenbuch Setup"
+			Version="1.0.0.0"
+			Manufacturer="Entruencer UG"
+			UpgradeCode="B1111111-2222-3333-4444-555555555555">
+		<BootstrapperApplicationRef Id="WixStandardBootstrapperApplication.HyperlinkLicense" />
+		<WixVariable Id="WixStdbaLicenseUrl" Value="https://entruencer.de/impressum/" />
+
+		<Chain>
+			<MsiPackage SourceFile="..\KassenbuchSetup\bin\Release\KassenbuchSetup.msi" />
+		</Chain>
+	</Bundle>
+</Wix>

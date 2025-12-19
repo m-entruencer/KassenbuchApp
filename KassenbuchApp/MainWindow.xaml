@@ -1,0 +1,257 @@
+﻿<Window x:Class="KassenbuchApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:local="clr-namespace:KassenbuchApp"
+        Title="Kassenbuch" Height="800" Width="1200"
+        Background="#1E1E1E"
+        Foreground="White"
+        FontFamily="Segoe UI" FontSize="14">
+    <Window.Resources>
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <local:IntToVisibilityConverter  x:Key="IntToVisibilityConverter"  />
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Kopfzeile: Kontostand, Filter, Export -->
+        
+        <Grid Grid.Row="0" Margin="0 0 0 20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Logo-Icon -->
+                <Image Source="logo.png" Width="30" Height="30" Margin="0 0 10 0" Cursor="Hand"
+           MouseLeftButtonUp="Logo_Click"/>
+
+                <!-- Textblock "Kontostand:" -->
+                <TextBlock Text="Kontostand: " VerticalAlignment="Center" Margin="0 0 5 0" />
+
+                <!-- tatsächlicher Betrag -->
+                <TextBlock x:Name="txtKontostand" FontWeight="Bold" VerticalAlignment="Center" />
+            </StackPanel>
+
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Monat" Margin="10 0 0 3" />
+                    <ComboBox x:Name="cmbMonat" Width="120" Margin="10,0,0,0" SelectedIndex="0">
+                        <ComboBoxItem Content="Alle Monate" IsSelected="True" />
+                        <ComboBoxItem Content="Januar" />
+                        <ComboBoxItem Content="Februar" />
+                        <ComboBoxItem Content="März" />
+                        <ComboBoxItem Content="April" />
+                        <ComboBoxItem Content="Mai" />
+                        <ComboBoxItem Content="Juni" />
+                        <ComboBoxItem Content="Juli" />
+                        <ComboBoxItem Content="August" />
+                        <ComboBoxItem Content="September" />
+                        <ComboBoxItem Content="Oktober" />
+                        <ComboBoxItem Content="November" />
+                        <ComboBoxItem Content="Dezember" />
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Margin="0 0 0 0">
+                    <TextBlock Text="Jahr" Margin="10 0 0 3" />
+                    <ComboBox x:Name="cmbJahr" Width="120" Margin="10,0,10,0" />
+                </StackPanel>
+
+                <StackPanel VerticalAlignment="Bottom">
+                    <Button x:Name="btnExport" Content="📤 Exportieren"
+                            Width="150" Height="25"
+                            Background="#27AE60" Foreground="White" BorderBrush="Transparent"
+                            Click="BtnExport_Click" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!-- Formular zur Eingabe -->
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0 0 0 20">
+            <TextBlock Text="➕ Einnahme hinzufügen" FontWeight="Bold" Margin="0 10 0 5" FontSize="16" />
+            <WrapPanel Margin="0 0 0 10">
+                <StackPanel Margin="5">
+                    <TextBlock Text="Datum" />
+                    <DatePicker x:Name="datePickerEinnahme" SelectedDate="{x:Static sys:DateTime.Now}" Width="150" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Betrag (€)" />
+                    <TextBox x:Name="txtEinnahme" Width="150" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Käufer/Zweck" />
+                    <TextBox x:Name="txtZweckEinnahme" Width="200" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Verkaufte Artikel" />
+                    <TextBox x:Name="txtArtikel" Width="200" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Bezahlmethode" />
+                    <ComboBox x:Name="comboBezahlmethodeEinnahme" Width="150" Height="30">
+                        <ComboBoxItem Content="Bar" />
+                        <ComboBoxItem Content="Überweisung" />
+                        <ComboBoxItem Content="PayPal" />
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Margin="5" VerticalAlignment="Bottom">
+                    <Button x:Name="btnEinnahmeSpeichern" Content="➕ Einnahme speichern" Width="180" Height="30" Padding="10 5"
+                            Background="#007ACC" Foreground="White" BorderBrush="Transparent"
+                            Click="BtnEinnahmeSpeichern_Click" />
+                </StackPanel>
+            </WrapPanel>
+
+            <TextBlock Text="➖ Ausgabe hinzufügen" FontWeight="Bold" Margin="0 20 0 5" FontSize="16" />
+            <WrapPanel Margin="0 0 0 10">
+                <StackPanel Margin="5">
+                    <TextBlock Text="Datum" />
+                    <DatePicker x:Name="datePickerAusgabe" SelectedDate="{x:Static sys:DateTime.Now}" Width="150" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Betrag (€)" />
+                    <TextBox x:Name="txtAusgabe" Width="150" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Zweck" />
+                    <TextBox x:Name="txtZweckAusgabe" Width="200" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Bezahlmethode" />
+                    <ComboBox x:Name="comboBezahlmethode" Width="150" Height="30">
+                        <ComboBoxItem Content="Bar" />
+                        <ComboBoxItem Content="Überweisung" />
+                        <ComboBoxItem Content="PayPal" />
+                    </ComboBox>
+                </StackPanel>
+              <!--<StackPanel Margin="5">
+                    <TextBlock Text="Beleg (optional)" />
+                    <Button x:Name="btnBelegAuswählen" Content="Beleg auswählen..." Height="30" Width="150"
+                            Click="BtnBelegAuswählen_Click" />
+                </StackPanel>-->
+                <StackPanel Margin="5" VerticalAlignment="Bottom">
+                    <Button x:Name="btnAusgabeSpeichern" Content="➖ Ausgabe speichern" Width="180" Height="30" Padding="10 5"
+                            Background="#C0392B" Foreground="White" BorderBrush="Transparent"
+                            Click="BtnAusgabeSpeichern_Click" />
+                </StackPanel>
+            </WrapPanel>
+
+            <TextBlock x:Name="txtBelegPfad" Text="Kein Beleg ausgewählt" FontSize="12" Margin="5,0,0,5" Foreground="LightGray" />
+        </StackPanel>
+
+        <!-- Tabelle -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <DataGrid x:Name="dataGrid"
+                      AutoGenerateColumns="False"
+                      CanUserSortColumns="True"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      ItemsSource="{Binding}"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      Background="#2D2D30"
+                      Foreground="White"
+                      RowBackground="#3E3E42"
+                      AlternatingRowBackground="#2D2D30"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      BorderBrush="Transparent"
+                      Margin="0 0 0 10" SelectionChanged="dataGrid_SelectionChanged">
+                <DataGrid.Resources>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Foreground" Value="White" />
+                        <Setter Property="Background" Value="#333" />
+                        <Setter Property="FontWeight" Value="Bold" />
+                    </Style>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Datum" Binding="{Binding Datum}" Width="*" />
+                    <DataGridTextColumn Header="Einnahme" Binding="{Binding EinnahmeBrutto}" Width="*" />
+                    <DataGridTextColumn Header="Käufer/Zweck" Binding="{Binding KäuferZweck}" Width="*" />
+                    <DataGridTextColumn Header="Artikel" Binding="{Binding VerkaufterArtikel}" Width="*" />
+                    <DataGridTextColumn Header="Ausgabe" Binding="{Binding AusgabeBrutto}" Width="*" />
+                    <DataGridTextColumn Header="Zweck Ausgabe" Binding="{Binding ZweckDerAusgabe}" Width="*" />
+                    <DataGridTextColumn Header="Bezahlmethode" Binding="{Binding Bezahlmethode}" Width="*" />
+                    <DataGridTemplateColumn Header="Aktionen" Width="100">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Content="✏️" Width="30" Margin="2" Click="BtnBearbeiten_Click" Tag="{Binding Id}" />
+                                    <Button Content="🗑️" Width="30" Margin="2" Click="BtnLoeschen_Click" Tag="{Binding Id}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Beleg" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Visibility="{Binding BelegCount, Converter={StaticResource IntToVisibilityConverter}}">
+                                    <Button Content="📎"
+                                            Width="26"
+                                            Height="24"
+                                            Tag="{Binding Id}"
+                                            ToolTip="{Binding BelegCount, StringFormat={}{0} Beleg(e)}"
+                                            Click="BelegKlammer_Click"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent"
+                                            Foreground="White"
+                                            FontSize="16"
+                                            Cursor="Hand">              
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Opacity" Value="0.8"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Opacity" Value="1"/>
+                                                        <Setter Property="Foreground" Value="#FF7FD4FF"/>
+                                                        <!-- sanftes Blau beim Hover -->
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter Property="Opacity" Value="0.6"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Text="{Binding BelegCount}"
+                           Margin="4,0,0,0"
+                           VerticalAlignment="Center"
+                           FontWeight="Bold"
+                           Foreground="White"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                </DataGrid.Columns>
+                <DataGrid.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Belege (Einnahme)…"
+                      Click="BelegeEinnahme_Context_Click"
+                      Visibility="{Binding EinnahmeBrutto, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                        <MenuItem Header="Belege (Ausgabe)…"
+                      Click="BelegeAusgabe_Context_Click"
+                      Visibility="{Binding AusgabeBrutto, Converter={StaticResource NullToVisibilityConverter}}"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+            </DataGrid>
+        </ScrollViewer>
+
+        <!-- Monatsnavigation ganz unten -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 10 0 0">
+            <Button Content="◀" Width="30" Click="BtnMonatZurueck_Click" />
+            <TextBlock x:Name="txtMonatsAnzeige" Text="April 2025" Margin="10 0" VerticalAlignment="Center" FontWeight="Bold" />
+            <Button Content="▶" Width="30" Click="BtnMonatVor_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

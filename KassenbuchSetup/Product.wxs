@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+	<Product Id="*"
+			 Name="Kassenbuch"
+			 Language="1031"
+			 Version="1.3.0.0"
+			 Manufacturer="entruener"
+			 UpgradeCode="C0A1B879-D7E0-4B3D-8DAB-B33B4B679ABC">
+
+		<Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+
+		<!-- Upgrade-Handling -->
+		<MajorUpgrade DowngradeErrorMessage="Eine neuere Version ist bereits installiert." />
+
+		<!-- Icon für Systemsteuerung -->
+		<MediaTemplate />
+		<Icon Id="icon.ico" SourceFile="logo.ico"/>
+		<Property Id="ARPPRODUCTICON" Value="icon.ico" />
+
+		<!-- *** Verzeichnisse DEKLARIEREN (unter Product!) *** -->
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="Kassenbuch" />
+			</Directory>
+			<Directory Id="DesktopFolder" />
+			<Directory Id="ProgramMenuFolder">
+				<Directory Id="ApplicationProgramsFolder" Name="Kassenbuch" />
+			</Directory>
+		</Directory>
+
+		<!-- Feature verweist auf unsere ComponentGroup (kommt im Fragment unten) -->
+		<Feature Id="ProductFeature" Title="Kassenbuch" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+
+	</Product>
+
+	<Fragment>
+		<DirectoryRef Id="INSTALLFOLDER">
+			<Directory Id="dirRuntimes" Name="runtimes">
+				<Directory Id="dirWinX64" Name="win-x64">
+					<Directory Id="dirNative" Name="native" />
+				</Directory>
+			</Directory>
+		</DirectoryRef>
+	</Fragment>
+
+	<!-- *** Dateien & Shortcuts (als Fragment – Geschwister von Product) *** -->
+	<Fragment>
+		<ComponentGroup Id="ProductComponents">
+
+			<!-- Hauptdateien -->
+			<Component Id="AppExecutable" Directory="INSTALLFOLDER" Guid="{23BC2D8B-4A79-4B78-A0C6-CFE50E6C611E}">
+				<File Source="$(var.KassenbuchApp.TargetDir)\KassenbuchApp.exe" KeyPath="yes" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\KassenbuchApp.dll" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\KassenbuchApp.runtimeconfig.json" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\KassenbuchApp.deps.json" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\System.Data.SQLite.dll" />
+				<File Id="SQLiteInteropRoot" Source="$(var.KassenbuchApp.TargetDir)\SQLite.Interop.dll" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\System.Data.SQLite.EF6.dll" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\System.Data.SqlClient.dll" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\EntityFramework.dll" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\EntityFramework.SqlServer.dll" />
+				<File Source="$(var.KassenbuchApp.TargetDir)\sni.dll" />
+				<!-- WICHTIG: KEINE kassenbuch.db hier aufnehmen -->
+			</Component>
+
+			<Component Id="SQLiteNativeX64" Directory="dirNative" Guid="{A2E0AF1A-9E5B-4B2E-9C91-3C9342F0B6B7}">
+				<File Id="SQLiteInteropNativeX64" Source="$(var.KassenbuchApp.TargetDir)\runtimes\win-x64\native\SQLite.Interop.dll" />
+			</Component>
+
+			<!-- Shortcuts + Marker -->
+			<Component Id="AppShortcuts" Directory="INSTALLFOLDER" Guid="{D1A2B2C3-D4E5-4F67-8901-A2B3C4D5E6F7}">
+				<Shortcut Id="desktopShortcut"
+						  Directory="DesktopFolder"
+						  Name="Kassenbuch"
+						  Target="[INSTALLFOLDER]KassenbuchApp.exe"
+						  WorkingDirectory="INSTALLFOLDER"
+						  Icon="icon.ico" />
+				<Shortcut Id="startMenuShortcut"
+						  Directory="ApplicationProgramsFolder"
+						  Name="Kassenbuch"
+						  Target="[INSTALLFOLDER]KassenbuchApp.exe"
+						  WorkingDirectory="INSTALLFOLDER"
+						  Icon="icon.ico" />
+
+				<!-- Startmenüordner bei Deinstallation entfernen -->
+				<RemoveFolder Id="RemoveStartMenuFolder"
+							  Directory="ApplicationProgramsFolder"
+							  On="uninstall" />
+
+				<!-- KeyPath via Registry (damit die Component einen KeyPath hat) -->
+				<RegistryValue Root="HKCU"
+							   Key="Software\Kassenbuch"
+							   Name="installed"
+							   Type="integer"
+							   Value="1"
+							   KeyPath="yes" />
+			</Component>
+
+		</ComponentGroup>
+	</Fragment>
+
+</Wix>
