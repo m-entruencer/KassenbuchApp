@@ -372,9 +372,28 @@ namespace KassenbuchApp
         }
 
 
+        private static bool TryParseAmount(string? input, out decimal betrag)
+        {
+            // Korrigiert die Betragseingabe kulturunabhängig:
+            // - bevorzugt deutsches Format ("," als Dezimaltrenner)
+            // - akzeptiert auch "." als Dezimaltrenner
+            // - verhindert implizite Skalierung (z.B. 10 -> 1000)
+            betrag = 0m;
+            if (string.IsNullOrWhiteSpace(input))
+                return false;
+
+            var trimmed = input.Trim();
+            var german = new CultureInfo("de-DE");
+            if (decimal.TryParse(trimmed, NumberStyles.Number, german, out betrag))
+                return true;
+
+            var normalized = trimmed.Replace(',', '.');
+            return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out betrag);
+        }
+
         private void BtnEinnahmeSpeichern_Click(object sender, RoutedEventArgs e)
         {
-            if (decimal.TryParse(txtEinnahme.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal betrag))
+            if (TryParseAmount(txtEinnahme.Text, out decimal betrag))
             {
                 using var conn = GetConnection();
                 conn.Open();
@@ -515,7 +534,7 @@ namespace KassenbuchApp
 
         private void BtnAusgabeSpeichern_Click(object sender, RoutedEventArgs e)
         {
-            if (decimal.TryParse(txtAusgabe.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal betrag))
+            if (TryParseAmount(txtAusgabe.Text, out decimal betrag))
             {
                 using var conn = GetConnection();
                 conn.Open();
@@ -569,10 +588,10 @@ namespace KassenbuchApp
                         WHERE Id = @Id", conn);
 
                     cmd.Parameters.AddWithValue("@Datum", bearbeitungsFenster.GeänderterEintrag.Datum);
-                    cmd.Parameters.AddWithValue("@Einnahme", string.IsNullOrWhiteSpace(bearbeitungsFenster.GeänderterEintrag.EinnahmeBrutto) ? (object)DBNull.Value : Convert.ToDecimal(bearbeitungsFenster.GeänderterEintrag.EinnahmeBrutto));
+                    cmd.Parameters.AddWithValue("@Einnahme", string.IsNullOrWhiteSpace(bearbeitungsFenster.GeänderterEintrag.EinnahmeBrutto) ? (object)DBNull.Value : TryParseAmount(bearbeitungsFenster.GeänderterEintrag.EinnahmeBrutto, out var einnahme) ? einnahme : (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@ZweckE", bearbeitungsFenster.GeänderterEintrag.KäuferZweck);
                     cmd.Parameters.AddWithValue("@Artikel", bearbeitungsFenster.GeänderterEintrag.VerkaufterArtikel);
-                    cmd.Parameters.AddWithValue("@Ausgabe", string.IsNullOrWhiteSpace(bearbeitungsFenster.GeänderterEintrag.AusgabeBrutto) ? (object)DBNull.Value : Convert.ToDecimal(bearbeitungsFenster.GeänderterEintrag.AusgabeBrutto));
+                    cmd.Parameters.AddWithValue("@Ausgabe", string.IsNullOrWhiteSpace(bearbeitungsFenster.GeänderterEintrag.AusgabeBrutto) ? (object)DBNull.Value : TryParseAmount(bearbeitungsFenster.GeänderterEintrag.AusgabeBrutto, out var ausgabe) ? ausgabe : (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("@ZweckA", bearbeitungsFenster.GeänderterEintrag.ZweckDerAusgabe);
                     cmd.Parameters.AddWithValue("@Methode", bearbeitungsFenster.GeänderterEintrag.Bezahlmethode);
                     cmd.Parameters.AddWithValue("@Id", eintrag.Id);
