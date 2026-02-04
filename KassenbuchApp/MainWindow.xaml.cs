@@ -74,6 +74,7 @@ namespace KassenbuchApp
         {
             public int Id { get; set; }
             public string Datum { get; set; } = string.Empty;
+            public DateTime DatumSort { get; set; }
             public string? EinnahmeBrutto { get; set; }
             public string? KäuferZweck { get; set; }
             public string? VerkaufterArtikel { get; set; }
@@ -203,6 +204,7 @@ namespace KassenbuchApp
                 {
                     Id = Convert.ToInt32(reader["Id"]),
                     Datum = DateTime.TryParse(reader["Datum"].ToString(), out var d) ? d.ToString("dd.MM.yyyy") : "",
+                    DatumSort = DateTime.TryParse(reader["Datum"].ToString(), out var sortDate) ? sortDate : DateTime.MinValue,
                     EinnahmeBrutto = einnahme.HasValue ? einnahme.Value.ToString("F2") + " €" : "",
                     KäuferZweck = reader["KäuferZweck"].ToString(),
                     VerkaufterArtikel = reader["VerkaufterArtikel"].ToString(),
@@ -239,9 +241,22 @@ namespace KassenbuchApp
 
             // Anzeige aktualisieren
             dataGrid.ItemsSource = eintraege;
+            ApplyDefaultSort();
             txtKontostand.Text = saldo.ToString("F2") + " €";
         }
 
+        private void ApplyDefaultSort()
+        {
+            var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
+            if (view == null)
+                return;
+
+            using (view.DeferRefresh())
+            {
+                view.SortDescriptions.Clear();
+                view.SortDescriptions.Add(new SortDescription(nameof(KassenbuchEintrag.DatumSort), ListSortDirection.Descending));
+            }
+        }
 
 
         private void BtnExport_Click(object sender, RoutedEventArgs e)
@@ -432,19 +447,21 @@ namespace KassenbuchApp
                 using var conn = GetConnection();
                 conn.Open();
 
-                var cmd = new SQLiteCommand(@"INSERT INTO Kassenbuch (Datum, AusgabeBrutto, ZweckDerAusgabe, Bezahlmethode, BelegPfad) 
-                                              VALUES (@Datum, @Ausgabe, @Zweck, @Methode, @Beleg)", conn);
+                var cmd = new SQLiteCommand(@"INSERT INTO Kassenbuch (Datum, AusgabeBrutto, ZweckDerAusgabe, KäuferZweck, Bezahlmethode, BelegPfad) 
+                                              VALUES (@Datum, @Ausgabe, @Zweck, @Kaeufer, @Methode, @Beleg)", conn);
                 cmd.Parameters.AddWithValue("@Datum", datePickerAusgabe.SelectedDate?.ToString("yyyy-MM-dd"));
                 cmd.Parameters.AddWithValue("@Ausgabe", betrag);
                 cmd.Parameters.AddWithValue("@Zweck", txtZweckAusgabe.Text);
                 cmd.Parameters.AddWithValue("@Methode", (comboBezahlmethode.SelectedItem as ComboBoxItem)?.Content?.ToString());
                 cmd.Parameters.AddWithValue("@Beleg", string.IsNullOrWhiteSpace(ausgewählterBelegPfad) ? DBNull.Value : ausgewählterBelegPfad);
+                cmd.Parameters.AddWithValue("@Kaeufer", txtKaeuferAusgabe.Text);
 
                 cmd.ExecuteNonQuery();
                 LadeKassenbuch();
 
                 txtAusgabe.Text = "";
                 txtZweckAusgabe.Text = "";
+                txtKaeuferAusgabe.Text = "";
                 comboBezahlmethode.SelectedIndex = -1;
                 txtBelegPfad.Text = "Kein Beleg ausgewählt";
                 ausgewählterBelegPfad = "";
@@ -539,41 +556,12 @@ namespace KassenbuchApp
             win.ShowDialog();
         }
 
-        private void BelegeEinnahme_Context_Click(object sender, RoutedEventArgs e)
-        {
-            if (dataGrid.SelectedItem is KassenbuchEintrag row)
-            {
-                var win = new BelegeWindow(row.Id, "Einnahme") { Owner = this };
-                win.ShowDialog();
-
-                // Zähler aktualisieren
-                var counts = LadeAlleBelegCounts();
-                counts.TryGetValue(row.Id, out var c);
-                row.BelegCount = c;
-                dataGrid.Items.Refresh();
-            }
-        }
-
-        private void BelegeAusgabe_Context_Click(object sender, RoutedEventArgs e)
-        {
-            if (dataGrid.SelectedItem is KassenbuchEintrag row)
-            {
-                var win = new BelegeWindow(row.Id, "Ausgabe") { Owner = this };
-                win.ShowDialog();
-
-                var counts = LadeAlleBelegCounts();
-                counts.TryGetValue(row.Id, out var c);
-                row.BelegCount = c;
-                dataGrid.Items.Refresh();
-            }
-        }
-
         private void BelegKlammer_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is int id)
             {
                 // Aktuelle Zeile ermitteln
-                var row = dataGrid.SelectedItem as KassenbuchEintrag;
+                var row = btn.DataContext as KassenbuchEintrag;
 
                 // Seite bestimmen (wenn du ein explizites Feld hast, nutze das)
                 string seite = "Ausgabe";
