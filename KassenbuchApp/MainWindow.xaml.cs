@@ -19,12 +19,10 @@ namespace KassenbuchApp
 {
     public partial class MainWindow : Window
     {
-        private string ausgewählterBelegPfad = "";
+        private readonly List<string> ausgewählteBelegeEinnahme = new();
+        private readonly List<string> ausgewählteBelegeAusgabe = new();
         private int aktuellerMonat = DateTime.Now.Month;
         private int aktuellesJahr = DateTime.Now.Year;
-        private readonly string belegVerzeichnis = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Belege");
-
-
         public MainWindow()
         {
             InitializeComponent();
@@ -36,7 +34,6 @@ namespace KassenbuchApp
             LadeJahresauswahl();
             AktualisiereMonatsanzeige();
             LadeKassenbuch();
-            Directory.CreateDirectory(belegVerzeichnis);
         }
 
         private Dictionary<int, int> LadeAlleBelegCounts()
@@ -383,20 +380,24 @@ namespace KassenbuchApp
                 conn.Open();
 
                 var cmd = new SQLiteCommand(@"INSERT INTO Kassenbuch (Datum, EinnahmeBrutto, KäuferZweck, VerkaufterArtikel, Bezahlmethode) 
-                                              VALUES (@Datum, @Einnahme, @Zweck, @Artikel, @Methode)", conn);
+                                              VALUES (@Datum, @Einnahme, @Zweck, @Artikel, @Methode);
+                                              SELECT last_insert_rowid();", conn);
                 cmd.Parameters.AddWithValue("@Datum", datePickerEinnahme.SelectedDate?.ToString("yyyy-MM-dd"));
                 cmd.Parameters.AddWithValue("@Einnahme", betrag);
                 cmd.Parameters.AddWithValue("@Zweck", txtZweckEinnahme.Text);
                 cmd.Parameters.AddWithValue("@Artikel", txtArtikel.Text);
                 cmd.Parameters.AddWithValue("@Methode", (comboBezahlmethodeEinnahme.SelectedItem as ComboBoxItem)?.Content?.ToString());
 
-                cmd.ExecuteNonQuery();
+                var eintragId = Convert.ToInt32(cmd.ExecuteScalar());
+                SaveBelegeForEntry(eintragId, "Einnahme", ausgewählteBelegeEinnahme, datePickerEinnahme.SelectedDate);
                 LadeKassenbuch();
 
                 txtEinnahme.Text = "";
                 txtZweckEinnahme.Text = "";
                 txtArtikel.Text = "";
                 comboBezahlmethodeEinnahme.SelectedIndex = -1;
+                ausgewählteBelegeEinnahme.Clear();
+                txtBelegEinnahme.Text = "Kein Beleg ausgewählt";
             }
             else
             {
@@ -404,40 +405,112 @@ namespace KassenbuchApp
             }
         }
 
-        private void BtnBelegAuswählen_Click(object sender, RoutedEventArgs e)
+        private void BtnBelegEinnahme_Click(object sender, RoutedEventArgs e)
+        {
+            ausgewählteBelegeEinnahme.Clear();
+            ausgewählteBelegeEinnahme.AddRange(SelectBelegDateien());
+            txtBelegEinnahme.Text = GetBelegStatusText(ausgewählteBelegeEinnahme.Count);
+        }
+
+        private void BtnBelegAusgabe_Click(object sender, RoutedEventArgs e)
+        {
+            ausgewählteBelegeAusgabe.Clear();
+            ausgewählteBelegeAusgabe.AddRange(SelectBelegDateien());
+            txtBelegAusgabe.Text = GetBelegStatusText(ausgewählteBelegeAusgabe.Count);
+        }
+
+        private List<string> SelectBelegDateien()
         {
             var dialog = new OpenFileDialog
             {
-                Filter = "PDF-Dateien (*.pdf)|*.pdf|Bilder (*.jpg;*.png)|*.jpg;*.png|Alle Dateien (*.*)|*.*"
+                Filter = "PDF-Dateien (*.pdf)|*.pdf|Bilder (*.jpg;*.png)|*.jpg;*.png|Alle Dateien (*.*)|*.*",
+                Multiselect = true
             };
 
             if (dialog.ShowDialog() == true)
             {
-                string originalPfad = dialog.FileName;
-
-                // Zielverzeichnis innerhalb der App
-                string belegVerzeichnis = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Belege");
-
-                // Verzeichnis erstellen, falls es noch nicht existiert
-                Directory.CreateDirectory(belegVerzeichnis);
-
-                // Eindeutiger Dateiname erzeugen
-                string zielDateiname = $"{Guid.NewGuid()}{Path.GetExtension(originalPfad)}";
-                string zielPfad = Path.Combine(belegVerzeichnis, zielDateiname);
-
-                try
-                {
-                    File.Copy(originalPfad, zielPfad, overwrite: true);
-                    ausgewählterBelegPfad = zielPfad;
-                    txtBelegPfad.Text = Path.GetFileName(zielPfad);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Fehler beim Kopieren der Datei: {ex.Message}", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                return new List<string>(dialog.FileNames);
             }
+
+            return new List<string>();
         }
 
+        private static string GetBelegStatusText(int anzahl)
+        {
+            return anzahl switch
+            {
+                0 => "Kein Beleg ausgewählt",
+                1 => "1 Beleg ausgewählt",
+                _ => $"{anzahl} Belege ausgewählt"
+            };
+        }
+
+        private void SaveBelegeForEntry(int kassenbuchId, string seite, List<string> dateien, DateTime? datum)
+        {
+            if (dateien.Count == 0)
+                return;
+
+            using var con = new SQLiteConnection(AppConfig.ConnectionString);
+            con.Open();
+
+            var now = datum ?? DateTime.Now;
+            var targetDir = BelegStorage.EnsureEntryFolder(now.Year, now.Month, kassenbuchId);
+
+            int laufNr = 0;
+            foreach (var srcPath in dateien)
+            {
+                if (!File.Exists(srcPath))
+                    continue;
+
+                var ext = Path.GetExtension(srcPath);
+                var baseName = Path.GetFileName(srcPath);
+                var md5Src = BelegStorage.ComputeMd5(srcPath);
+
+                using (var dup = con.CreateCommand())
+                {
+                    dup.CommandText = "SELECT COUNT(1) FROM Belege WHERE KassenbuchId=@kid AND Seite=@seite AND HashMd5=@md5";
+                    dup.Parameters.AddWithValue("@kid", kassenbuchId);
+                    dup.Parameters.AddWithValue("@seite", seite);
+                    dup.Parameters.AddWithValue("@md5", md5Src);
+
+                    if (Convert.ToInt32(dup.ExecuteScalar()) > 0)
+                    {
+                        continue;
+                    }
+                }
+
+                int idx = ++laufNr;
+                string fileName;
+                string dstPath;
+                while (true)
+                {
+                    fileName = $"{now:yyyy-MM-dd}_{kassenbuchId}_{idx:D2}{ext}";
+                    dstPath = Path.Combine(targetDir, fileName);
+                    if (!File.Exists(dstPath))
+                        break;
+                    idx++;
+                }
+                laufNr = idx;
+
+                File.Copy(srcPath, dstPath, overwrite: false);
+
+                var relPath = Path.GetRelativePath(BelegStorage.BaseFolder, dstPath).Replace('\\', '/');
+
+                using var ins = con.CreateCommand();
+                ins.CommandText = @"
+                INSERT INTO Belege
+                    (KassenbuchId, Seite, Originalname, Dateiname, RelPfad, HashMd5, HinzugefuegtAm)
+                VALUES
+                    (@kid, @seite, @orig, @datei, @rel, @md5, strftime('%Y-%m-%dT%H:%M:%SZ','now'))";
+                ins.Parameters.AddWithValue("@kid", kassenbuchId);
+                ins.Parameters.AddWithValue("@seite", seite);
+                ins.Parameters.AddWithValue("@orig", baseName);
+                ins.Parameters.AddWithValue("@datei", fileName);
+                ins.Parameters.AddWithValue("@rel", relPath);
+                ins.Parameters.AddWithValue("@md5", md5Src);
+                ins.ExecuteNonQuery();
+            }
+        }
 
 
         private void BtnAusgabeSpeichern_Click(object sender, RoutedEventArgs e)
@@ -448,23 +521,25 @@ namespace KassenbuchApp
                 conn.Open();
 
                 var cmd = new SQLiteCommand(@"INSERT INTO Kassenbuch (Datum, AusgabeBrutto, ZweckDerAusgabe, KäuferZweck, Bezahlmethode, BelegPfad) 
-                                              VALUES (@Datum, @Ausgabe, @Zweck, @Kaeufer, @Methode, @Beleg)", conn);
+                                              VALUES (@Datum, @Ausgabe, @Zweck, @Kaeufer, @Methode, @Beleg);
+                                              SELECT last_insert_rowid();", conn);
                 cmd.Parameters.AddWithValue("@Datum", datePickerAusgabe.SelectedDate?.ToString("yyyy-MM-dd"));
                 cmd.Parameters.AddWithValue("@Ausgabe", betrag);
                 cmd.Parameters.AddWithValue("@Zweck", txtZweckAusgabe.Text);
                 cmd.Parameters.AddWithValue("@Methode", (comboBezahlmethode.SelectedItem as ComboBoxItem)?.Content?.ToString());
-                cmd.Parameters.AddWithValue("@Beleg", string.IsNullOrWhiteSpace(ausgewählterBelegPfad) ? DBNull.Value : ausgewählterBelegPfad);
+                cmd.Parameters.AddWithValue("@Beleg", DBNull.Value);
                 cmd.Parameters.AddWithValue("@Kaeufer", txtKaeuferAusgabe.Text);
 
-                cmd.ExecuteNonQuery();
+                var eintragId = Convert.ToInt32(cmd.ExecuteScalar());
+                SaveBelegeForEntry(eintragId, "Ausgabe", ausgewählteBelegeAusgabe, datePickerAusgabe.SelectedDate);
                 LadeKassenbuch();
 
                 txtAusgabe.Text = "";
                 txtZweckAusgabe.Text = "";
                 txtKaeuferAusgabe.Text = "";
                 comboBezahlmethode.SelectedIndex = -1;
-                txtBelegPfad.Text = "Kein Beleg ausgewählt";
-                ausgewählterBelegPfad = "";
+                ausgewählteBelegeAusgabe.Clear();
+                txtBelegAusgabe.Text = "Kein Beleg ausgewählt";
             }
             else
             {

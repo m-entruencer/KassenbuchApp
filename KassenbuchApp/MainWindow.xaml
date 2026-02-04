@@ -100,6 +100,12 @@
                         <ComboBoxItem Content="PayPal" />
                     </ComboBox>
                 </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Beleg (optional)" />
+                    <Button x:Name="btnBelegEinnahme" Content="Beleg hochladen..." Height="30" Width="160"
+                            Click="BtnBelegEinnahme_Click" />
+                    <TextBlock x:Name="txtBelegEinnahme" Text="Kein Beleg ausgewählt" FontSize="12" Foreground="LightGray" />
+                </StackPanel>
                 <StackPanel Margin="5" VerticalAlignment="Bottom">
                     <Button x:Name="btnEinnahmeSpeichern" Content="➕ Einnahme speichern" Width="180" Height="30" Padding="10 5"
                             Background="#007ACC" Foreground="White" BorderBrush="Transparent"
@@ -118,12 +124,12 @@
                     <TextBox x:Name="txtAusgabe" Width="150" Height="30" />
                 </StackPanel>
                 <StackPanel Margin="5">
-                    <TextBlock Text="Zweck" />
-                    <TextBox x:Name="txtZweckAusgabe" Width="200" Height="30" />
-                </StackPanel>
-                <StackPanel Margin="5">
                     <TextBlock Text="Käufer" />
                     <TextBox x:Name="txtKaeuferAusgabe" Width="200" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Zweck" />
+                    <TextBox x:Name="txtZweckAusgabe" Width="200" Height="30" />
                 </StackPanel>
                 <StackPanel Margin="5">
                     <TextBlock Text="Bezahlmethode" />
@@ -133,11 +139,12 @@
                         <ComboBoxItem Content="PayPal" />
                     </ComboBox>
                 </StackPanel>
-              <!--<StackPanel Margin="5">
+                <StackPanel Margin="5">
                     <TextBlock Text="Beleg (optional)" />
-                    <Button x:Name="btnBelegAuswählen" Content="Beleg auswählen..." Height="30" Width="150"
-                            Click="BtnBelegAuswählen_Click" />
-                </StackPanel>-->
+                    <Button x:Name="btnBelegAusgabe" Content="Beleg hochladen..." Height="30" Width="160"
+                            Click="BtnBelegAusgabe_Click" />
+                    <TextBlock x:Name="txtBelegAusgabe" Text="Kein Beleg ausgewählt" FontSize="12" Foreground="LightGray" />
+                </StackPanel>
                 <StackPanel Margin="5" VerticalAlignment="Bottom">
                     <Button x:Name="btnAusgabeSpeichern" Content="➖ Ausgabe speichern" Width="180" Height="30" Padding="10 5"
                             Background="#C0392B" Foreground="White" BorderBrush="Transparent"
@@ -145,7 +152,6 @@
                 </StackPanel>
             </WrapPanel>
 
-            <TextBlock x:Name="txtBelegPfad" Text="Kein Beleg ausgewählt" FontSize="12" Margin="5,0,0,5" Foreground="LightGray" />
         </StackPanel>
 
         <!-- Tabelle -->
