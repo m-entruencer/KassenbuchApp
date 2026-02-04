@@ -53,12 +53,31 @@ CREATE TABLE IF NOT EXISTS Belege (
             {
                 cmd.CommandText = @"
 INSERT INTO Belege (KassenbuchId, Seite, Originalname, Dateiname, RelPfad, HinzugefuegtAm)
-SELECT Id, 'Ausgabe', BelegPfad, BelegPfad, BelegPfad, strftime('%Y-%m-%dT%H:%M:%SZ','now')
+SELECT Id,
+       CASE 
+           WHEN IFNULL(EinnahmeBrutto,0) <> 0 AND IFNULL(AusgabeBrutto,0) = 0 THEN 'Einnahme'
+           ELSE 'Ausgabe'
+       END,
+       BelegPfad, BelegPfad, BelegPfad, strftime('%Y-%m-%dT%H:%M:%SZ','now')
 FROM Kassenbuch
 WHERE BelegPfad IS NOT NULL AND BelegPfad <> ''
   AND NOT EXISTS (
       SELECT 1 FROM Belege b
       WHERE b.KassenbuchId = Kassenbuch.Id AND b.RelPfad = Kassenbuch.BelegPfad
+  );";
+                cmd.ExecuteNonQuery();
+            }
+
+            // 4) Bestehende, falsch zugeordnete Belege korrigieren (Einnahme vs. Ausgabe)
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.CommandText = @"
+UPDATE Belege
+SET Seite = 'Einnahme'
+WHERE Seite = 'Ausgabe'
+  AND KassenbuchId IN (
+      SELECT Id FROM Kassenbuch
+      WHERE IFNULL(EinnahmeBrutto,0) <> 0 AND IFNULL(AusgabeBrutto,0) = 0
   );";
                 cmd.ExecuteNonQuery();
             }

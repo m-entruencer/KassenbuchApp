@@ -8,8 +8,6 @@
         Foreground="White"
         FontFamily="Segoe UI" FontSize="14">
     <Window.Resources>
-        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
-        <local:IntToVisibilityConverter  x:Key="IntToVisibilityConverter"  />
     </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -87,7 +85,7 @@
                     <TextBox x:Name="txtEinnahme" Width="150" Height="30" />
                 </StackPanel>
                 <StackPanel Margin="5">
-                    <TextBlock Text="Käufer/Zweck" />
+                    <TextBlock Text="Käufer" />
                     <TextBox x:Name="txtZweckEinnahme" Width="200" Height="30" />
                 </StackPanel>
                 <StackPanel Margin="5">
@@ -101,6 +99,12 @@
                         <ComboBoxItem Content="Überweisung" />
                         <ComboBoxItem Content="PayPal" />
                     </ComboBox>
+                </StackPanel>
+                <StackPanel Margin="5">
+                    <TextBlock Text="Beleg (optional)" />
+                    <Button x:Name="btnBelegEinnahme" Content="Beleg hochladen..." Height="30" Width="160"
+                            Click="BtnBelegEinnahme_Click" />
+                    <TextBlock x:Name="txtBelegEinnahme" Text="Kein Beleg ausgewählt" FontSize="12" Foreground="LightGray" />
                 </StackPanel>
                 <StackPanel Margin="5" VerticalAlignment="Bottom">
                     <Button x:Name="btnEinnahmeSpeichern" Content="➕ Einnahme speichern" Width="180" Height="30" Padding="10 5"
@@ -120,6 +124,10 @@
                     <TextBox x:Name="txtAusgabe" Width="150" Height="30" />
                 </StackPanel>
                 <StackPanel Margin="5">
+                    <TextBlock Text="Käufer" />
+                    <TextBox x:Name="txtKaeuferAusgabe" Width="200" Height="30" />
+                </StackPanel>
+                <StackPanel Margin="5">
                     <TextBlock Text="Zweck" />
                     <TextBox x:Name="txtZweckAusgabe" Width="200" Height="30" />
                 </StackPanel>
@@ -131,11 +139,12 @@
                         <ComboBoxItem Content="PayPal" />
                     </ComboBox>
                 </StackPanel>
-              <!--<StackPanel Margin="5">
+                <StackPanel Margin="5">
                     <TextBlock Text="Beleg (optional)" />
-                    <Button x:Name="btnBelegAuswählen" Content="Beleg auswählen..." Height="30" Width="150"
-                            Click="BtnBelegAuswählen_Click" />
-                </StackPanel>-->
+                    <Button x:Name="btnBelegAusgabe" Content="Beleg hochladen..." Height="30" Width="160"
+                            Click="BtnBelegAusgabe_Click" />
+                    <TextBlock x:Name="txtBelegAusgabe" Text="Kein Beleg ausgewählt" FontSize="12" Foreground="LightGray" />
+                </StackPanel>
                 <StackPanel Margin="5" VerticalAlignment="Bottom">
                     <Button x:Name="btnAusgabeSpeichern" Content="➖ Ausgabe speichern" Width="180" Height="30" Padding="10 5"
                             Background="#C0392B" Foreground="White" BorderBrush="Transparent"
@@ -143,7 +152,6 @@
                 </StackPanel>
             </WrapPanel>
 
-            <TextBlock x:Name="txtBelegPfad" Text="Kein Beleg ausgewählt" FontSize="12" Margin="5,0,0,5" Foreground="LightGray" />
         </StackPanel>
 
         <!-- Tabelle -->
@@ -172,9 +180,9 @@
                     </Style>
                 </DataGrid.Resources>
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Datum" Binding="{Binding Datum}" Width="*" />
+                    <DataGridTextColumn Header="Datum" Binding="{Binding Datum}" SortMemberPath="DatumSort" Width="*" />
                     <DataGridTextColumn Header="Einnahme" Binding="{Binding EinnahmeBrutto}" Width="*" />
-                    <DataGridTextColumn Header="Käufer/Zweck" Binding="{Binding KäuferZweck}" Width="*" />
+                    <DataGridTextColumn Header="Käufer" Binding="{Binding KäuferZweck}" Width="*" />
                     <DataGridTextColumn Header="Artikel" Binding="{Binding VerkaufterArtikel}" Width="*" />
                     <DataGridTextColumn Header="Ausgabe" Binding="{Binding AusgabeBrutto}" Width="*" />
                     <DataGridTextColumn Header="Zweck Ausgabe" Binding="{Binding ZweckDerAusgabe}" Width="*" />
@@ -193,8 +201,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        Visibility="{Binding BelegCount, Converter={StaticResource IntToVisibilityConverter}}">
+                        HorizontalAlignment="Center">
                                     <Button Content="📎"
                                             Width="26"
                                             Height="24"
@@ -233,17 +240,6 @@
                     </DataGridTemplateColumn>
 
                 </DataGrid.Columns>
-                <DataGrid.ContextMenu>
-                    <ContextMenu DataContext="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource Self}}">
-                        <MenuItem Header="Belege (Einnahme)…"
-                      Click="BelegeEinnahme_Context_Click"
-                      Visibility="{Binding EinnahmeBrutto, Converter={StaticResource NullToVisibilityConverter}}"/>
-
-                        <MenuItem Header="Belege (Ausgabe)…"
-                      Click="BelegeAusgabe_Context_Click"
-                      Visibility="{Binding AusgabeBrutto, Converter={StaticResource NullToVisibilityConverter}}"/>
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
             </DataGrid>
         </ScrollViewer>
 
